@@ -1,21 +1,26 @@
-# 每日更新（在本机运行）
+# 每日更新时刻表
 #
-# 为什么不放在 GitHub Actions 上：
-#   12306 会拒绝境外机房 IP —— 实测用境外中转拉 12306 接口一律返回 522，
-#   GitHub 的 runner 在美国/欧洲，抓不到任何数据。
-#   所以定时抓取改由本机（国内 IP）跑：scripts/daily-refresh.bat，
-#   由 Windows 计划任务「夜宿火车每日更新」每天 06:30 触发。
+# 每天北京时间 06:17 自动抓一次 12306，重建 docs/ 并提交，Pages 会自动重新发布。
+# 也可以在 Actions 页面手动点「Run workflow」。
 #
-# 这个工作流保留下来只为「手动在云端试跑」用（workflow_dispatch），
-# 不再设 schedule，避免每天出现一个失败的红叉。
+# 实测（2026-11-13）：GitHub 的 runner 访问 12306 正常，
+# 抓 1267 趟车的索引约 20 秒，1186 份时刻表约 3 分钟，全程 4 分钟出头。
+# 若某天 12306 抽风，会在「抓车次索引」一步失败并停下，
+# 仓库和线上站点保持上一次的数据，不会写进坏数据。
 
-name: 云上手动更新（可能被 12306 拦截）
+name: 每日更新时刻表
 
 on:
+  schedule:
+    - cron: '17 22 * * *' # UTC 22:17 = 北京时间 06:17
   workflow_dispatch:
 
 permissions:
   contents: write
+
+concurrency:
+  group: refresh
+  cancel-in-progress: false
 
 jobs:
   refresh:

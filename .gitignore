@@ -26,3 +26,7 @@ Thumbs.db
 # 每日更新日志
 data/last-refresh.log
 
+
+# 推广素材（本地宣发用，不进仓库）
+推广素材/
+

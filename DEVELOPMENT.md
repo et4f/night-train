@@ -26,10 +26,7 @@ night-train/
 │  ├─ 05-build-portable.mjs ← 打单文件版 + zip
 │  ├─ 06-fetch-basemap.mjs ← 下载官方标准地图底图
 │  ├─ 07-build-docs.mjs    ← 组装 docs/
-│  ├─ daily-refresh.bat    ← 每日更新（计划任务调用）
-│  └─ push.ps1             ← 定时任务里的推送（无交互环境）
-├─ .github/workflows/refresh.yml ← 云端手动更新（一般用不上，见下）
-├─ 安装每日更新任务.bat    ← 双击一次，注册每天 06:30 的本机更新
+├─ .github/workflows/refresh.yml ← 每天 06:17 自动更新并发布
 └─ 夜宿火车-便携版.zip     ← 发给别人的单文件包
 ```
 
@@ -90,36 +87,34 @@ night-train/
 
 ## 每日自动更新
 
-**必须在本机跑**：12306 拒绝境外机房 IP。实测用两个独立中转服务（美国、欧洲）
-去拉 12306 接口，全部返回 **522**，GitHub Actions 的 runner 属于同一类网段。
+`.github/workflows/refresh.yml` 每天北京时间 **06:17** 由 GitHub Actions 自动跑：
 
-所以：
+1. 探测 12306 可达性（只记录 HTTP 码，不阻断）
+2. `01-fetch-index.mjs` 抓车次索引
+3. `02-fetch-schedules.mjs` 抓经停时刻表
+4. `03-build.mjs` → `data/app.json`，`07-build-docs.mjs` → `docs/`
+5. 有变化就 commit & push，Pages 自动重新发布
 
-1. 双击 `安装每日更新任务.bat` 注册计划任务「夜宿火车每日更新」，每天 **06:30** 触发
-2. `scripts/daily-refresh.bat` 依次跑 01 → 02 → 03 → 07，然后 commit + push
-3. `scripts/push.ps1` 用 `.token.txt` 里的令牌推送
+**实测（2026-11-13）**：runner 访问 12306 正常，`search` 和 `kyfw` 都返回 200；
+索引 1267 趟用时约 20 秒，时刻表 1186 份约 3 分钟，全程 4 分钟出头。
 
-### 令牌
+### 一段走弯路的记录
 
-`.token.txt` 不在仓库里（`.gitignore` 已排除）。生成方式：
-<https://github.com/settings/tokens/new> → 勾 `repo` 和 `workflow` → 存成该文件。
-有效期 90 天，过期后换一个。
+最初一次云端运行失败在「抓车次索引」，我据此判断「12306 拒绝境外 IP」，
+于是把定时任务改到了本机 Windows 计划任务。**这个判断是错的**：
 
-### 踩过的坑（都已在脚本里解决）
+- 当时用来验证的两个境外中转服务返回 522，是那两个服务本身连不上 12306，
+  不能代表 GitHub 的出口；
+- 后来的实际运行证明 runner 完全能访问 12306，只是那次撞上了限流。
 
-| 现象 | 原因 | 处理 |
-| --- | --- | --- |
-| `could not read Username` | 计划任务没有终端 | `GIT_TERMINAL_PROMPT=0` + 认证头 |
-| `Invalid username or token` | 仓库配了 GCM，非交互下返回空凭据覆盖认证头 | `-c credential.helper=` |
-| 脚本解析报错「缺少 }」 | PowerShell 5.1 把无 BOM 的 UTF-8 当 ANSI | `push.ps1` 改成纯 ASCII |
-| git 卡住不动 | 代理偶发 TLS 断连 | `http.lowSpeedTime=30` + 重试 3 次 |
-| 每天 06:17 一个红叉 | Actions 抓不到 12306 | 取消 schedule，改为手动触发 |
+现在已恢复云端定时（06:17），本机计划任务和配套脚本都删掉了；
+需要手动更新时，本地跑 `refresh.bat` 再 `git push` 即可。
 
-日志在 `data/last-refresh.log`。删除任务：
+### 失败时会发生什么
 
-```bat
-schtasks /Delete /TN "夜宿火车每日更新" /F
-```
+`01-fetch-index.mjs` 对每个车次前缀单独 try/catch，撞上限流只会少抓一段、不会整体失败；
+真正抛错只在最终车次少于 500 趟时。这时工作流停在「抓车次索引」，
+仓库和线上站点保持上一次的数据，不会写进坏数据。
 
 ---
 

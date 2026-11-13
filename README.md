@@ -56,7 +56,7 @@ node scripts/03-build.mjs            # 生成 data/app.json
 node scripts/07-build-docs.mjs       # 重建 docs/
 ```
 
-或直接双击 `refresh.bat`。
+或直接双击 `refresh.bat`。仓库每天北京时间 06:17 会自动做一次同样的更新并发布。
 
 ## 地图
 
