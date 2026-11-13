@@ -22,3 +22,7 @@ Thumbs.db
 # 本地令牌（绝不提交）
 .token.txt
 
+
+# 每日更新日志
+data/last-refresh.log
+

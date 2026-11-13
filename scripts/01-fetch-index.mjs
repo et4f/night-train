@@ -18,11 +18,13 @@ const DATA = path.resolve(import.meta.dirname, '..', 'data');
 const UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
 const DATE = process.argv[2] || new Date().toISOString().slice(0, 10).replace(/-/g, '');
-const PREFIXES = process.argv.slice(3).length ? process.argv.slice(3) : ['Z', 'T', 'K', 'Y', 'D'];
+// 只抓 Z/T/K/Y —— 这正是本站收录的卧铺车底。
+// 再加 D 会让请求量翻倍，12306 会在 ~1300 次后开始返 403，得不偿失。
+const PREFIXES = process.argv.slice(3).length ? process.argv.slice(3) : ['Z', 'T', 'K', 'Y'];
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 let lastHit = 0;
-const MIN_GAP = 260; // 单线程最小间隔，避免触发风控
+const MIN_GAP = 380; // 单线程最小间隔，避免触发风控
 
 async function getJSON(url) {
   let backoff = 1500;
@@ -114,11 +116,19 @@ async function main() {
   for (const t of PREFIXES) {
     if (t === '__skipstations') continue;
     const before = found.size;
-    await crawl(t);
+    try {
+      await crawl(t);
+    } catch (e) {
+      // 被 12306 限流时不要整体失败：已抓到的先留着，下一个前缀继续
+      console.warn(`    ! ${t} 抓取中断（${e.message}），保留已抓到的 ${found.size} 趟`);
+      await sleep(20000);
+    }
     await fs.writeFile(path.join(DATA, 'index.json'), JSON.stringify([...found.values()]));
     console.log(`    ${t || '(无字母)'}：+${found.size - before}，累计 ${found.size}`);
   }
   console.log('完成，共', found.size, '趟列车');
+  // 抓到足够多就算成功（限流导致少几个前缀也不影响出站）
+  if (found.size < 500) throw new Error('车次索引过少，可能被限流，放弃本次更新');
 }
 
 main().catch((e) => {
