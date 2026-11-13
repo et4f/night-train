@@ -34,7 +34,8 @@ Set-Location $root
 $ok = $false
 for ($i = 1; $i -le 3; $i++) {
   Write-Output "  [push] 第 $i 次尝试…"
-  git -c http.lowSpeedTime=30 push origin main 2>&1 | ForEach-Object { Write-Output $_ }
+  # credential.helper= 必须清空：仓库里配了 GCM，非交互环境下它会返回无效凭据，把认证头覆盖掉
+  git -c credential.helper= -c http.lowSpeedTime=30 push origin main 2>&1 | ForEach-Object { Write-Output $_ }
   if ($LASTEXITCODE -eq 0) { $ok = $true; break }
   Start-Sleep -Seconds 8
 }
