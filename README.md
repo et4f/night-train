@@ -1,301 +1,86 @@
 # 🌙 夜宿火车
 
-> 选一座城市，看看一晚上的火车能把你带到哪儿——上车睡觉，醒来换座城。
+> 选一座城市，看看一晚上的火车能把你带到哪儿。
 
-一个纯前端的小工具：**选城市 → 列出所有「傍晚上车、清晨抵达」的卧铺车能到的城市**，配一张自然资源部标准地图做底图。
-
-- 🌙 **从这儿出发**：我在上海，一夜能睡到哪些城市？
-- 🎯 **到这儿来**：我想去西安，哪些城市能一夜睡到西安？
-- 🌦 **顺带看天气**：到达城市今晚几度、明早下车时什么天、要不要带伞
-- ☀️ **白天 / 夜间**两种配色，一键切换并记住
+[![在线体验](https://img.shields.io/badge/在线体验-et4f.github.io-2f6fed)](https://et4f.github.io/night-train/)
+[![License](https://img.shields.io/badge/license-MIT-3da639)](LICENSE)
+[![AI](https://img.shields.io/badge/AI-dsv4.1flash-7c3aed)](#关于-ai)
 
 ![界面](screenshot.png)
 
-数据来自中国铁路 12306 公开时刻表，覆盖全部 Z / T / K / Y 字头普速卧铺列车：
-**1154 趟车、1234 座车站、327 座城市**。查询全部在浏览器本地完成，毫秒出结果。
+输入一座城市，列出**所有能坐一夜卧铺车抵达的城市**——傍晚上车、清晨到站，
+把一晚住宿睡在铁轨上。
 
----
+- 🌙 **两个方向**：从这里出发能睡到哪 / 哪些城市能一夜睡到这儿
+- 📊 **夜宿指数**：按发车时间、到达时间、车上时长加权打分，90 分以上是
+  「睡前不用赶、醒来正好七八点」
+- 🗺️ **官方地图**：自然资源部标准地图，审图号 GS(2016)1614，含南海诸岛与台湾
+- 🌦️ **到达地天气**：今晚几度、明早下车几度、要不要带伞
+- ☀️ **白天 / 夜间**两套配色，一键切换
 
-## 目录
+## 在线体验
 
-- [三种用法](#三种用法)
-- [发布到 GitHub](#发布到-github)
-- [自动更新（每天一次）](#自动更新每天一次)
-- [让网页直连 12306（可选）](#让网页直连-12306可选)
-- [「一晚上的火车」怎么判定](#一晚上的火车怎么判定)
-- [天气与白天/夜间模式](#天气与白天夜间模式)
-- [地图来源与合规](#地图来源与合规)
-- [目录结构](#目录结构)
-- [本地更新数据](#本地更新数据)
-- [免责声明](#免责声明)
+**<https://et4f.github.io/night-train/>**
 
----
+## 开始使用
 
-## 三种用法
+**直接用（推荐）**：下载 [`夜宿火车-便携版.zip`](https://github.com/et4f/night-train/releases)，
+解压后双击 `夜宿火车.html`。单个文件约 1 MB，不需要安装、不需要联网。
 
-### 1. 单文件版（发给别人 / 自己随手用）
-
-解压 `夜宿火车-便携版.zip`，双击里面的 **`夜宿火车.html`**。约 1 MB，
-不用装 Node、不用服务器、不用联网，Windows / Mac / 手机浏览器都能开。
-
-### 2. 本地开发版
+**本地跑开发版**（需要 Node.js 18+，零依赖）：
 
 ```bash
 node server/server.mjs      # 或双击 start.bat
 # → http://127.0.0.1:8787
 ```
 
-需要 Node.js 18+，零依赖。
+## 数据
 
-### 3. 线上（GitHub Pages）
+来自中国铁路 12306 公开时刻表，覆盖全部 **Z / T / K / Y** 字头普速卧铺列车：
 
-推到 GitHub 后，`docs/` 目录直接发布，见下一节。
+| | |
+| --- | --- |
+| 车次 | 1187 趟 |
+| 车站 | 1236 座 |
+| 城市 | 328 座 |
 
----
+时刻是**运行图计划时刻**，不是当日实际开行，出行前请以 12306 为准；
+不含票价、余票、卧铺席别，也不含白天运行的高铁动车。
 
-## 发布到 GitHub
-
-### 第 1 步：建仓库
-
-1. 登录 GitHub，右上角 **+ → New repository**
-2. 仓库名填 `night-train`，选 **Public**（免费版 Pages 要求公开仓库）
-3. **不要**勾 "Add a README file"，直接 Create
-
-### 第 2 步：把代码推上去
-
-在项目根目录（有 `README.md` 这一层）打开终端：
+更新数据（约 3–5 分钟）：
 
 ```bash
-git init
-git add .
-git commit -m "feat: 夜宿火车 v1"
-git branch -M main
-git remote add origin https://github.com/你的用户名/night-train.git
-git push -u origin main
-```
-
-> 没装 git？也可以在仓库页点 **Add file → Upload files** 把整个文件夹拖进去。
-> 首次 push 要认证：GitHub 早就不支持密码了，用 **Personal Access Token** 或 GitHub Desktop。
-
-### 第 3 步：开启 Pages（30 秒）
-
-1. 仓库 → **Settings** → 左侧 **Pages**
-2. **Source** 选 **Deploy from a branch**
-3. **Branch** 选 `main`，目录选 **`/docs`**，点 **Save**
-
-### 第 4 步：访问
-
-```
-https://你的用户名.github.io/night-train/
-```
-
-`docs/` 就是编译好的整站（`scripts/07-build-docs.mjs` 生成），
-刻意不依赖 Actions 部署，这样对新手最省事：**只要 push，Pages 自己会重建**。
-
-> 想用自己的域名？Settings → Pages → Custom domain 填进去即可。
-
----
-
-## 自动更新（每天一次）
-
-> ⚠️ **重要**：这一步必须**在你自己的电脑上**跑，不能交给 GitHub Actions。
-
-### 为什么不能用 GitHub 的定时任务
-
-12306 会拒绝境外机房的 IP。实测用两个独立的中转服务（分别在美国和欧洲）去拉 12306 接口，
-**全部返回 522**（网关连不上源站），GitHub Actions 的 runner 也在同一类网段。
-
-所以仓库里的 `refresh.yml` **只保留手动触发**（`workflow_dispatch`），不再设定时，
-免得每天出现一个失败的红叉。云端那份可以当作“万一哪天能连通”的备用。
-
-### 实际做法：Windows 计划任务
-
-| 文件 | 作用 |
-| --- | --- |
-| `安装每日更新任务.bat` | 双击一次，注册计划任务「夜宿火车每日更新」，每天 **06:30** 触发 |
-| `scripts/daily-refresh.bat` | 实际干活的脚本：抓数据 → 重建 `docs/` → 提交 → 推送 |
-| `scripts/push.ps1` | 用 `.token.txt` 里的令牌推送（计划任务没有交互界面） |
-| `data/last-refresh.log` | 每次运行的日志，出问题先看它 |
-
-首次使用需要把你的 GitHub 令牌存到 **`.token.txt`**（该文件已在 `.gitignore` 里）：
-
-1. 打开 <https://github.com/settings/tokens/new>
-2. Note 随便填，Expiration 选 90 天，勾选 **`repo`** 和 **`workflow`**
-3. 生成后复制，存成 `D:\dsh\夜宿火车\.token.txt`（只放这一行）
-
-然后双击 `安装每日更新任务.bat`。它会立刻试跑一次，结果写进 `data/last-refresh.log`。
-
-删除这个任务：
-
-```bat
-schtasks /Delete /TN "夜宿火车每日更新" /F
-```
-
-> 注意：任务设的是「仅登录时运行」，所以电脑关机或没登录时不会跑；
-> 开机后不会自动补跑，下一次 06:30 照常。
-> 令牌有效期 90 天，到期前换一个新的写进 `.token.txt` 即可。
-
----
-
-## 让网页直连 12306（可选）
-
-默认网页读的是 `docs/data/app.json`（每天自动更新）。
-如果你还想让用户在页面上**当场从 12306 拉实时数据**，需要部署一个中转服务。
-
-### 为什么必须中转
-
-12306 两个接口的跨域策略不一样，我实测过：
-
-| 接口 | 用途 | 浏览器能否直连 |
-| --- | --- | --- |
-| `search.12306.cn/search/v1/train/search` | 车次列表 | ✅ 返回 `Access-Control-Allow-Origin`，可直接请求 |
-| `kyfw.12306.cn/otn/czxx/queryByTrainNo` | 经停时刻表 | ❌ 没有任何 CORS 头，浏览器会被拦 |
-
-**纯静态页面拿不到时刻表**，这是 12306 服务端的限制，换任何写法都绕不过去。
-
-### 部署 Worker（5 分钟）
-
-1. 登录 <https://dash.cloudflare.com> → **Workers & Pages → Create → Worker**
-2. 起名（比如 `night-train`）→ **Edit code**，粘贴 `worker/12306-proxy.js` 全文 → **Deploy**
-3. （可选）**Settings → Variables** 加一个 `SYNC_KEY`，值随便一串随机字符，用来允许写入 KV
-4. （可选）**Settings → Bindings → KV Namespace** 新建命名空间，变量名填 **`SNAPSHOT`**
-5. 拿到地址，形如 `https://night-train.你的子域.workers.dev`
-
-然后打开 `web/index.html`，把地址填进去（改完记得跑一次 `node scripts/07-build-docs.mjs`）：
-
-```html
-<script>
-  window.NIGHT_API = 'https://night-train.你的子域.workers.dev';
-</script>
-```
-
-页面右上角会出现 **⟳ 同步 12306** 按钮，点一下：枚举车次 → 经 Worker 逐趟拉时刻表 →
-存进浏览器 IndexedDB，24 小时内不重复拉。
-
-### 为什么不用 Cloudflare 的 Cron 定时抓
-
-试过，**跑不动**，不是配置问题：
-
-- Workers 免费版每次调用最多 **50 个子请求**、**CPU 10ms**
-- 完整抓一轮需要 **约 1200 次请求**（1150 趟车 × 1 次时刻表 + 车次枚举）
-
-所以「每天自动更新」交给 GitHub Actions（不受这些限制），
-Worker 只干两件事：**转发单个请求** 和 **存取 KV 里的整份快照**。
-
-| 路由 | 作用 |
-| --- | --- |
-| `GET /snapshot` | 读 KV 里的当日快照，页面打开时优先用 |
-| `POST /snapshot?key=` | 写入快照，需要 `SYNC_KEY`，由 GitHub Actions 调用 |
-| `GET /proxy?u=` | 转发 12306 请求，带白名单，不会被当开放代理 |
-
----
-
-## 「一晚上的火车」怎么判定
-
-一趟车要同时满足：
-
-| 条件 | 默认值 | 说明 |
-| --- | --- | --- |
-| 发车时间 | 18:00 – 23:59 | 傍晚以后上车 |
-| 抵达时间 | 05:00 – 10:00 | 早上到，白天不浪费 |
-| 跨零点 | 必须 | 在车上过夜，而不是白天补觉 |
-| 车上时长 | 4.5 – 16 小时 | 太短不算一晚，太长不如坐飞机 |
-| 同城不算 | 是 | 出发城市与目的地城市相同的不列 |
-
-**夜宿指数（0–100）** 由三项加权：发车时间 34% + 抵达时间 40% + 车上时长 26%。
-90 分以上是「黄金夜宿」——睡前不用赶、醒来正好是早上七八点。
-
----
-
-## 天气与白天/夜间模式
-
-页面顶部有一条天气栏，显示**你要去的那个城市**的天气：
-
-- 「到这儿来」模式：显示你选中的目的地
-- 「从这儿出发」模式：默认显示排名第一的到达城市，点列表里任何城市可以切过去看
-
-栏里给的是夜里赶车真正关心的四件事：**当前温度/体感**、**今晚 21:00 的温度**、
-**明早 06:00 下车时的温度和降水概率**、**日落时间**（决定你上车时天还亮不亮）。
-
-数据来自 [wttr.in](https://wttr.in)（WorldWeatherOnline 数据），**免注册、无需 Key、允许跨域**，
-浏览器直连即可。抓不到就整条隐藏，不会干扰列车查询。
-
-> 为什么不用国内天气 API？基本都要注册申请 Key，静态站点没法藏密钥。
-> Open-Meteo 也考虑过，但在国内网络下经常连不上。
-
-右上角的 **🌙 夜间 / ☀️ 白天** 按钮切换整套配色，选择会存进 `localStorage`；
-也可以用 `?theme=light` 直接以白天模式打开。夜间模式下天气图标会跟着到达地的
-昼夜状态变（晴天显示月亮而不是太阳）。
-
----
-
-## 地图来源与合规
-
-底图用的是**自然资源部「标准地图服务」**发布的《中国地图》1:6000 万：
-
-- 来源：<http://bzdt.ch.mnr.gov.cn/>（通过其 SuperMap 地图服务取 1600×1200 的全国图幅）
-- **审图号：GS(2016)1614**，自然资源部监制
-- 完整包含南海诸岛、台湾岛、钓鱼岛、赤尾屿等，未作任何裁切或修改
-
-程序把经纬度贴到这张图上，用的是「双标准纬线等角圆锥投影」（Lambert Conformal Conic），
-参数是拿图上自带的经纬网和城市符号反推拟合的，见 `web/app.js` 的 `LCC` 常量。
-
-⚠️ **使用这张底图请遵守标准地图服务的规定**：不得修改地图内容、不得裁掉南海诸岛、
-使用时必须标注审图号。本项目在页面底部和 `LICENSE` 里都注明了审图号。
-
----
-
-## 目录结构
-
-```
-night-train/
-├─ docs/                   ← 编译好的整站，GitHub Pages 直接发布这个目录
-│  ├─ index.html  app.js  live.js  weather.js  style.css
-│  ├─ assets/china-standard-map.png
-│  └─ data/app.json
-├─ web/                    ← 源文件（app.js / weather.js / style.css，改完跑 07 生成 docs）
-├─ worker/12306-proxy.js   ← Cloudflare Worker：转发 + KV 快照
-├─ data/
-│  ├─ app.json             ← 数据集（约 400 KB）
-│  ├─ cities.json          ← 城市经纬度
-│  └─ schedules/ ...       ← 抓取中间产物（.gitignore 掉了）
-├─ scripts/
-│  ├─ 01-fetch-index.mjs   ← 抓车次索引
-│  ├─ 02-fetch-schedules.mjs ← 抓每趟车的经停时刻
-│  ├─ 03-build.mjs         ← 合并成 app.json
-│  ├─ 04-fetch-geo.mjs     ← 城市经纬度
-│  ├─ 05-build-portable.mjs ← 打单文件版 + zip
-│  ├─ 06-fetch-basemap.mjs ← 下载官方标准地图底图
-│  └─ 07-build-docs.mjs    ← 组装 docs/
-├─ .github/workflows/refresh.yml  ← 云端手动更新（12306 会拦境外 IP，一般用不上）
-├─ 安装每日更新任务.bat   ← 双击一次，注册本机每日 06:30 自动更新
-└─ 夜宿火车-便携版.zip     ← 发给别人的单文件包
-```
-
-> 改了 `web/` 里的东西，记得跑一次 `node scripts/07-build-docs.mjs`，否则线上不会变。
-
----
-
-## 本地更新数据
-
-```bash
-node scripts/01-fetch-index.mjs      # 车次索引（12306 会限流，慢一点）
-node scripts/02-fetch-schedules.mjs  # 经停时刻表（可断点续传）
+node scripts/01-fetch-index.mjs      # 车次索引
+node scripts/02-fetch-schedules.mjs  # 经停时刻（可断点续传）
 node scripts/03-build.mjs            # 生成 data/app.json
 node scripts/07-build-docs.mjs       # 重建 docs/
 ```
 
-或者双击 `refresh.bat`，再双击 `package.bat` 重打便携包。
+或直接双击 `refresh.bat`。
 
----
+## 地图
 
-## 免责声明
+底图取自**自然资源部「标准地图服务」**发布的《中国地图》1:6000 万，
+**审图号 GS(2016)1614**，完整包含南海诸岛、台湾岛、钓鱼岛，未作任何裁切。
 
-- 时刻是 **运行图计划时刻**，不是当日实际开行；改点、临客、停运不会体现在这里。
-- 不含票价、余票、卧铺席别；不含高铁动卧（D / G 字头）。
-- 数据来自 12306 公开接口，本项目仅做整理展示，**出行前请以 12306 官方为准**。
-- 与 12306、中国国家铁路集团无任何关联。
+程序用双标准纬线等角圆锥投影把经纬度贴到图上（参数由图上经纬网反推拟合）。
+
+> ⚠️ 使用该底图须遵守标准地图服务的规定：不得修改地图内容、不得裁掉南海诸岛、
+> 必须标注审图号。
+
+## 关于 AI
+
+本项目由 **dsv4.1flash** 于 2026 年 11 月生成，人类负责需求、验收与发布。
+
+GitHub 对 AI 辅助编写代码**没有强制标注要求**——平台政策里唯一相关的条款是
+[GitHub Synthetic Media and AI Tools](https://docs.github.com/en/site-policy/acceptable-use-policies/github-synthetic-media-and-ai-tools)，
+它只禁止用 AI 生成违法内容（CSAM、极端主义宣传、未经同意的私密影像），与正常写代码无关。
+这里自愿注明来源，方便你判断代码质量与可信度。
+
+## 更多
+
+接口细节、反向代理、每日自动更新机制、地图投影标定方法，见 [DEVELOPMENT.md](DEVELOPMENT.md)。
 
 ## License
 
-代码 MIT；地图版权归自然资源部，使用须标注审图号 GS(2016)1614，详见 [LICENSE](LICENSE)。
+代码 [MIT](LICENSE)；地图版权归自然资源部，使用时须标注审图号 GS(2016)1614。
