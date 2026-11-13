@@ -15,7 +15,12 @@ git diff --cached --quiet
 if not errorlevel 1 goto nopush
 git commit -m "chore: daily timetable refresh" >> "%LOG%" 2>&1
 powershell -NoProfile -ExecutionPolicy Bypass -File "scripts\push.ps1" >> "%LOG%" 2>&1
+if errorlevel 1 goto pushfail
 echo 已推送云端 >> "%LOG%"
+goto done
+:pushfail
+echo 推送失败：本地已提交，下次运行会自动补推 >> "%LOG%"
+goto done
 goto done
 :nopush
 echo 数据没有变化，跳过提交 >> "%LOG%"

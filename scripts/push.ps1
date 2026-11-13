@@ -1,21 +1,18 @@
-# 用 .token.txt 里的令牌推送
-# 计划任务里没有交互终端，所以：
-#   1) 认证头通过 GIT_CONFIG_* 环境变量传给 git（PowerShell 5.1 会拆坏带空格的命令行参数）
-#   2) 关掉终端密码提示，并给 HTTP 设低速超时，避免网络卡住时无限挂起
-#   3) 最多重试 3 次；失败也不影响本地已生成的提交，下次运行会一起推上去
+# Push with the token stored in .token.txt
+# (ASCII only: Windows PowerShell 5.1 reads BOM-less files as ANSI and chokes on non-ASCII)
 
 $ErrorActionPreference = 'Continue'
 $root = Split-Path -Parent $PSScriptRoot
 $tokenFile = Join-Path $root '.token.txt'
 
 if (-not (Test-Path $tokenFile)) {
-  Write-Output '  [push] 找不到 .token.txt，跳过推送'
+  Write-Output '  [push] .token.txt not found, skip push'
   exit 1
 }
 
 $tok = (Get-Content $tokenFile -Raw).Trim()
 if (-not $tok) {
-  Write-Output '  [push] .token.txt 是空的，跳过推送'
+  Write-Output '  [push] .token.txt is empty, skip push'
   exit 1
 }
 
@@ -33,8 +30,8 @@ Set-Location $root
 
 $ok = $false
 for ($i = 1; $i -le 3; $i++) {
-  Write-Output "  [push] 第 $i 次尝试…"
-  # credential.helper= 必须清空：仓库里配了 GCM，非交互环境下它会返回无效凭据，把认证头覆盖掉
+  Write-Output "  [push] attempt $i"
+  # credential.helper= must be cleared, otherwise GCM overrides the auth header
   git -c credential.helper= -c http.lowSpeedTime=30 push origin main 2>&1 | ForEach-Object { Write-Output $_ }
   if ($LASTEXITCODE -eq 0) { $ok = $true; break }
   Start-Sleep -Seconds 8
@@ -43,10 +40,9 @@ for ($i = 1; $i -le 3; $i++) {
 Remove-Item Env:GIT_CONFIG_COUNT, Env:GIT_CONFIG_KEY_0, Env:GIT_CONFIG_VALUE_0, Env:GIT_CONFIG_KEY_1, Env:GIT_CONFIG_VALUE_1 -ErrorAction SilentlyContinue
 
 if ($ok) {
-  Write-Output '  [push] 已推送云端'
+  Write-Output '  [push] PUSHED'
   exit 0
 } else {
-  Write-Output '  [push] 推送失败：网络或令牌问题。本地数据已更新，下次运行会重试；'
-  Write-Output '  [push] 也可以手动在项目目录执行 git push origin main'
+  Write-Output '  [push] PUSH FAILED (local commit kept, next run will retry)'
   exit 1
 }
