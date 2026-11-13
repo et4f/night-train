@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>夜宿火车 · 睡一晚就到</title>
+<link rel="stylesheet" href="style.css" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='25' font-size='24'>🌙</text></svg>" />
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand">
+      <div class="mark">🌙</div>
+      <div>
+        <h1>夜宿火车</h1>
+        <p class="tag">选一座城市，看看一晚上的火车能把你带到哪儿——上车睡觉，醒来换座城。</p>
+      </div>
+    </div>
+    <div class="meta-top" id="metaTop"></div>
+    <button class="chip syncbtn" id="syncBtn" hidden>⟳ 同步 12306</button>
+    <button class="chip themebtn" id="themeBtn" title="切换白天 / 夜间">🌙 夜间</button>
+  </header>
+
+  <div class="wxbar panel" id="wxbar" hidden></div>
+
+  <section class="panel searchbar">
+    <div>
+      <div class="modes" id="modes">
+        <button class="mode on" data-m="from">🌙 从这儿出发</button>
+        <button class="mode" data-m="to">🎯 到这儿来</button>
+      </div>
+      <div class="combo">
+        <input id="dest" type="text" spellcheck="false" autocomplete="off"
+               placeholder="输入出发城市，如 上海 / 北京" />
+        <button class="go" id="go" title="查询">↵</button>
+        <ul class="suggest" id="suggest" hidden></ul>
+      </div>
+      <div class="chips" id="chips"></div>
+    </div>
+
+    <div class="filters">
+      <div>
+        <span class="lbl">发车时段</span>
+        <div class="range">
+          <input type="time" id="depFrom" value="18:00" />
+          <span class="sep">→</span>
+          <input type="time" id="depTo" value="23:59" />
+        </div>
+      </div>
+      <div>
+        <span class="lbl">抵达时段</span>
+        <div class="range">
+          <input type="time" id="arrFrom" value="05:00" />
+          <span class="sep">→</span>
+          <input type="time" id="arrTo" value="10:00" />
+        </div>
+      </div>
+      <div>
+        <span class="lbl">最长车上时间</span>
+        <select class="sel" id="maxDur">
+          <option value="10">10 小时以内</option>
+          <option value="13">13 小时以内</option>
+          <option value="16" selected>16 小时以内</option>
+          <option value="20">20 小时以内</option>
+          <option value="28">28 小时以内</option>
+        </select>
+      </div>
+    </div>
+
+    <div>
+      <span class="lbl">车次类型</span>
+      <div class="types" id="types"></div>
+    </div>
+  </section>
+
+  <main>
+    <section>
+      <div class="summary">
+        <span class="n" id="sumN">–</span>
+        <span class="t" id="sumT">个城市</span>
+        <span class="grow"></span>
+        <select class="sel" id="sort">
+          <option value="score">按夜宿指数</option>
+          <option value="dur">按车上时间</option>
+          <option value="dep">按发车时间</option>
+          <option value="city">按城市名</option>
+        </select>
+      </div>
+      <div class="card-list" id="list"></div>
+    </section>
+
+    <aside class="panel" id="mapwrap">
+      <svg id="map" viewBox="220 0 1150 1200" preserveAspectRatio="xMidYMid meet" role="img"
+           aria-label="夜宿路线图，底图为自然资源部标准地图 GS(2016)1614"></svg>
+      <div class="mapfoot">
+        <span id="mapHint">连线：出发城市 → 目的地</span>
+        <span>底图：自然资源部标准地图 · 审图号 GS(2016)1614</span>
+      </div>
+    </aside>
+  </main>
+
+  <footer class="notes">
+    <div>
+      <b>怎么算「一晚」</b>：发车时间落在你设定的傍晚区间、到达时间落在清晨区间，且全程跨过零点（在车上过夜）。
+      「夜宿指数」由 <b>发车时间 34% + 抵达时间 40% + 车上时长 26%</b> 加权得出，90 分以上是理想节奏。
+    </div>
+    <div>
+      <b>两种查法</b>：切到「从这儿出发」，看我在的城市能睡到哪些地方；切到「到这儿来」，看哪些城市能一夜睡到这儿。
+    </div>
+    <div>
+      <b>数据</b>：车次与经停时刻来自 12306 公开时刻表（快照日期见右上角），覆盖全部 Z/T/K/Y 字头普速卧铺车次。
+      时刻为运行图计划时刻，出行前请以 12306 当日实际开行为准；临客、调整运行图的车次可能未收录。
+    </div>
+    <div>
+      <b>天气</b>：所选城市当前与今晚/明早的天气，数据来自 wttr.in（免注册、无需密钥）。
+      右上角可切换<b>白天 / 夜间</b>模式，选择会记在本机。
+    </div>
+  </footer>
+</div>
+
+<div class="toast" id="toast"></div>
+<script>
+  // 部署了 12306 中转 Worker 之后，把地址填在这里，页面就会直连 12306 取实时数据
+  window.NIGHT_API = '';
+</script>
+<script src="weather.js"></script>
+<script src="live.js"></script>
+<script src="app.js"></script>
+<script>
+  // 主题：默认夜间，记住了就用上次的选择；也可以用 ?theme=light 指定
+  (function () {
+    var saved = null;
+    try { saved = localStorage.getItem('night-theme'); } catch (e) {}
+    var q = new URLSearchParams(location.search).get('theme');
+    var t = q === 'light' || q === 'dark' ? q : saved || 'dark';
+    document.body.dataset.theme = t;
+  })();
+</script>
+</body>
+</html>
