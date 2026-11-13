@@ -98,27 +98,42 @@ https://你的用户名.github.io/night-train/
 
 ## 自动更新（每天一次）
 
-`.github/workflows/refresh.yml` 每天北京时间 **06:17** 跑一次：
+> ⚠️ **重要**：这一步必须**在你自己的电脑上**跑，不能交给 GitHub Actions。
 
-1. 抓 12306 车次索引 + 全部经停时刻表（约 3 分钟）
-2. `node scripts/03-build.mjs` 生成新的 `data/app.json`
-3. `node scripts/07-build-docs.mjs` 重建 `docs/`
-4. 有变化就自动 commit & push → Pages 重新发布
-5. 若配置了 `NIGHT_API`，顺手把快照推进 Cloudflare KV
+### 为什么不能用 GitHub 的定时任务
 
-**所以打开网页看到的就是当天的数据**，不用点任何按钮。
+12306 会拒绝境外机房的 IP。实测用两个独立的中转服务（分别在美国和欧洲）去拉 12306 接口，
+**全部返回 522**（网关连不上源站），GitHub Actions 的 runner 也在同一类网段。
 
-仓库设置（可选，用于第 5 步）：
+所以仓库里的 `refresh.yml` **只保留手动触发**（`workflow_dispatch`），不再设定时，
+免得每天出现一个失败的红叉。云端那份可以当作“万一哪天能连通”的备用。
 
-| 位置 | 名称 | 值 |
-| --- | --- | --- |
-| Settings → Secrets and variables → **Variables** | `NIGHT_API` | `https://你的worker.workers.dev` |
-| Settings → Secrets and variables → **Secrets** | `SYNC_KEY` | 跟 Worker 里设的同一个随机串 |
+### 实际做法：Windows 计划任务
 
-想立刻更新一次？Actions → **每日更新时刻表** → **Run workflow**。
+| 文件 | 作用 |
+| --- | --- |
+| `安装每日更新任务.bat` | 双击一次，注册计划任务「夜宿火车每日更新」，每天 **06:30** 触发 |
+| `scripts/daily-refresh.bat` | 实际干活的脚本：抓数据 → 重建 `docs/` → 提交 → 推送 |
+| `scripts/push.ps1` | 用 `.token.txt` 里的令牌推送（计划任务没有交互界面） |
+| `data/last-refresh.log` | 每次运行的日志，出问题先看它 |
 
-> ⚠️ GitHub 的定时任务有两个坑：① 仓库连续 60 天没有提交，schedule 会自动停；
-> ② 高峰期可能延迟几十分钟。手动 Run workflow 永远可用。
+首次使用需要把你的 GitHub 令牌存到 **`.token.txt`**（该文件已在 `.gitignore` 里）：
+
+1. 打开 <https://github.com/settings/tokens/new>
+2. Note 随便填，Expiration 选 90 天，勾选 **`repo`** 和 **`workflow`**
+3. 生成后复制，存成 `D:\dsh\夜宿火车\.token.txt`（只放这一行）
+
+然后双击 `安装每日更新任务.bat`。它会立刻试跑一次，结果写进 `data/last-refresh.log`。
+
+删除这个任务：
+
+```bat
+schtasks /Delete /TN "夜宿火车每日更新" /F
+```
+
+> 注意：任务设的是「仅登录时运行」，所以电脑关机或没登录时不会跑；
+> 开机后不会自动补跑，下一次 06:30 照常。
+> 令牌有效期 90 天，到期前换一个新的写进 `.token.txt` 即可。
 
 ---
 
@@ -252,7 +267,8 @@ night-train/
 │  ├─ 05-build-portable.mjs ← 打单文件版 + zip
 │  ├─ 06-fetch-basemap.mjs ← 下载官方标准地图底图
 │  └─ 07-build-docs.mjs    ← 组装 docs/
-├─ .github/workflows/refresh.yml  ← 每天自动更新
+├─ .github/workflows/refresh.yml  ← 云端手动更新（12306 会拦境外 IP，一般用不上）
+├─ 安装每日更新任务.bat   ← 双击一次，注册本机每日 06:30 自动更新
 └─ 夜宿火车-便携版.zip     ← 发给别人的单文件包
 ```
 

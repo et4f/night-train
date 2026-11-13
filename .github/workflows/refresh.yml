@@ -1,23 +1,26 @@
-name: 每日更新时刻表
+# 每日更新（在本机运行）
+#
+# 为什么不放在 GitHub Actions 上：
+#   12306 会拒绝境外机房 IP —— 实测用境外中转拉 12306 接口一律返回 522，
+#   GitHub 的 runner 在美国/欧洲，抓不到任何数据。
+#   所以定时抓取改由本机（国内 IP）跑：scripts/daily-refresh.bat，
+#   由 Windows 计划任务「夜宿火车每日更新」每天 06:30 触发。
+#
+# 这个工作流保留下来只为「手动在云端试跑」用（workflow_dispatch），
+# 不再设 schedule，避免每天出现一个失败的红叉。
 
-# 每天北京时间 06:17 抓一次 12306，重建 docs/ 并提交，Pages 会自动重新发布。
-# 也可以在 Actions 页面手动点「Run workflow」。
+name: 云上手动更新（可能被 12306 拦截）
+
 on:
-  schedule:
-    - cron: '17 22 * * *' # UTC 22:17 = 北京时间 06:17
   workflow_dispatch:
 
 permissions:
   contents: write
 
-concurrency:
-  group: refresh
-  cancel-in-progress: false
-
 jobs:
   refresh:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -25,10 +28,20 @@ jobs:
         with:
           node-version: 20
 
+      - name: 探测 12306 可达性
+        continue-on-error: true
+        run: |
+          echo "search.12306.cn:"
+          curl -s -o /dev/null -w "  HTTP %{http_code}\n" --max-time 20 \
+            "https://search.12306.cn/search/v1/train/search?keyword=Z&date=$(date -u +%Y%m%d)&from_station=&to_station=" || true
+          echo "kyfw.12306.cn:"
+          curl -s -o /dev/null -w "  HTTP %{http_code}\n" --max-time 20 \
+            "https://kyfw.12306.cn/otn/resources/js/framework/station_name.js" || true
+
       - name: 抓车次索引
         run: node scripts/01-fetch-index.mjs
 
-      - name: 抓经停时刻表（约 2 分钟）
+      - name: 抓经停时刻表
         run: node scripts/02-fetch-schedules.mjs
 
       - name: 合成数据集
@@ -38,28 +51,13 @@ jobs:
         run: node scripts/07-build-docs.mjs
 
       - name: 提交变更
-        id: commit
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/app.json docs
           if git diff --cached --quiet; then
-            echo "没有变化，跳过提交"
-            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "没有变化"
           else
-            git commit -m "chore: 每日更新 12306 时刻表 ($(date -u +%Y-%m-%d))"
+            git commit -m "chore: 更新 12306 时刻表 ($(date -u +%F))"
             git push
-            echo "changed=true" >> $GITHUB_OUTPUT
           fi
-
-      # 可选：把快照推到 Cloudflare KV，页面打开就能直接读
-      - name: 推送快照到 KV
-        if: steps.commit.outputs.changed == 'true' && vars.NIGHT_API != ''
-        continue-on-error: true
-        env:
-          NIGHT_API: ${{ vars.NIGHT_API }}
-          SYNC_KEY: ${{ secrets.SYNC_KEY }}
-        run: |
-          curl -sS -X POST "$NIGHT_API/snapshot?key=$SYNC_KEY" \
-            -H "Content-Type: application/json" \
-            --data-binary @data/app.json
