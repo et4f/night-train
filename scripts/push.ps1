@@ -1,5 +1,9 @@
-# 用 .token.txt 里的令牌推送（定时任务里没有交互界面，不能靠弹窗登录）
-$ErrorActionPreference = 'Stop'
+# 用 .token.txt 里的令牌推送
+# 计划任务里没有交互终端，所以：
+#   1) 认证头通过 GIT_CONFIG_* 环境变量传给 git（比命令行传参可靠，PowerShell 5.1 会拆坏带空格的参数）
+#   2) 关掉终端密码提示，失败就立刻返回，不会卡住
+
+$ErrorActionPreference = 'Continue'
 $root = Split-Path -Parent $PSScriptRoot
 $tokenFile = Join-Path $root '.token.txt'
 
@@ -15,7 +19,16 @@ if (-not $tok) {
 }
 
 $b64 = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("et4f:$tok"))
-Set-Location $root
 
-& git -c credential.helper= -c "http.extraHeader=Authorization: Basic $b64" push origin main 2>&1 | Out-String | Write-Output
-exit $LASTEXITCODE
+$env:GIT_TERMINAL_PROMPT = '0'
+$env:GIT_ASKPASS = ''
+$env:GIT_CONFIG_COUNT = '1'
+$env:GIT_CONFIG_KEY_0 = 'http.extraHeader'
+$env:GIT_CONFIG_VALUE_0 = "Authorization: Basic $b64"
+
+Set-Location $root
+git push origin main 2>&1 | ForEach-Object { Write-Output $_ }
+$code = $LASTEXITCODE
+
+Remove-Item Env:GIT_CONFIG_COUNT, Env:GIT_CONFIG_KEY_0, Env:GIT_CONFIG_VALUE_0 -ErrorAction SilentlyContinue
+exit $code

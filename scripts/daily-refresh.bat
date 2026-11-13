@@ -13,7 +13,7 @@ node scripts\07-build-docs.mjs >> "%LOG%" 2>&1
 git add data/app.json docs >> "%LOG%" 2>&1
 git diff --cached --quiet
 if not errorlevel 1 goto nopush
-git commit -m "chore: 每日更新时刻表" >> "%LOG%" 2>&1
+git commit -m "chore: daily timetable refresh" >> "%LOG%" 2>&1
 powershell -NoProfile -ExecutionPolicy Bypass -File "scripts\push.ps1" >> "%LOG%" 2>&1
 echo 已推送云端 >> "%LOG%"
 goto done
