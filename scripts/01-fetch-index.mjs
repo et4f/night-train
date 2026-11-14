@@ -23,7 +23,7 @@ const UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
 const BASE = process.argv[2] || new Date().toISOString().slice(0, 10).replace(/-/g, '');
 const PREFIXES = process.argv.slice(3).length ? process.argv.slice(3) : ['Z', 'T', 'K', 'Y', 'D', 'G'];
-const DAYS = 3; // 今天 + 后 2 天（再多会被 12306 限流，抓不完）
+const DAYS = 1; // 只抓今天；未来日期的开行情况靠 daymask.json 逐日累积
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 let lastHit = 0;
@@ -191,10 +191,27 @@ async function main() {
     days: [...t.days].sort((a, b) => a - b),
   }));
   await fs.writeFile(path.join(DATA, 'index.json'), JSON.stringify(out));
-  const complete = dayCounts.length === DAYS && dayCounts.every((c) => c >= 500);
+  // 逐日累积：记录「这一天有哪些车次开行」，攒够一周再启用按日期筛选
+  try {
+    const dmPath = path.join(DATA, 'daymask.json');
+    let dm = {};
+    try {
+      dm = JSON.parse(await fs.readFile(dmPath, 'utf8'));
+    } catch {}
+    const key = BASE.slice(0, 4) + '-' + BASE.slice(4, 6) + '-' + BASE.slice(6, 8);
+    dm[key] = out.map((t) => t.trainNo);
+    const keys = Object.keys(dm).sort();
+    for (const k of keys.slice(0, Math.max(0, keys.length - 12))) delete dm[k];
+    await fs.writeFile(dmPath, JSON.stringify(dm));
+    console.log('    已记录 ' + key + ' 的开行车次（累计 ' + Object.keys(dm).length + ' 天）');
+  } catch (e) {
+    console.warn('    ! 记录开行日历失败：' + e.message);
+  }
+
+  const complete = false;
   await fs.writeFile(
     path.join(DATA, 'index-base.json'),
-    JSON.stringify({ baseDate: BASE, days: DAYS, complete })
+    JSON.stringify({ baseDate: BASE, days: 3, complete })
   );
   if (!complete) console.warn('    ! 有日期没抓全（被限流），本次不启用按日期筛选');
 
