@@ -639,10 +639,11 @@
     }
     let html = '';
     let firstOk = null;
-    for (let i = 0; i < 6; i++) {
+    const total = Number(D.data.meta && D.data.meta.days) || 6;
+    for (let i = 0; i < total; i++) {
       const d = new Date(today.getTime() + i * 86400000);
       const off = i + diff;
-      const ok = off >= 0 && off <= 5;
+      const ok = off >= 0 && off < total;
       const label = i === 0 ? '今天' : i === 1 ? '明天' : i === 2 ? '后天' : `${i} 天后`;
       const md = `${d.getMonth() + 1}/${d.getDate()} ${WD[d.getDay()]}`;
       html += `<option value="${off}"${ok ? '' : ' disabled'}>${label} · ${md}${ok ? '' : '（无数据）'}</option>`;

@@ -70,6 +70,7 @@ async function main() {
   }
 
   const trains = [];
+  let daysCount = 3;
   let empty = 0;
   let dropped = 0;
   for (const f of files) {
@@ -103,7 +104,7 @@ async function main() {
       dropped++;
       continue;
     }
-    trains.push({ n: s.trainNo, c: s.code, t: type, d: daysMap.get(s.trainNo) || [0, 1, 2, 3, 4, 5], s: abs });
+    trains.push({ n: s.trainNo, c: s.code, t: type, d: daysMap.get(s.trainNo) || Array.from({ length: daysCount }, (_, i) => i), s: abs });
   }
 
   // 车站与城市字典（只保留真正出现在时刻表里的车站）
@@ -150,6 +151,7 @@ async function main() {
     const b = JSON.parse(await fs.readFile(path.join(DATA, 'index-base.json'), 'utf8'));
     baseDate = b.baseDate;
     daysReliable = b.complete === true;
+    daysCount = b.days || 3;
   } catch {}
   if (!daysReliable) daysMap.clear(); // 抓不全就当作每天都开，避免误杀车次
 
@@ -158,6 +160,7 @@ async function main() {
       generated: new Date().toISOString(),
       baseDate,
       daysReliable,
+      days: daysCount,
       trainCount: trains.length,
       stationCount: Object.keys(st).length,
       cityCount: Object.keys(cities).length,

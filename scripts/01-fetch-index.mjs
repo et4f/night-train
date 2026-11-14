@@ -23,7 +23,7 @@ const UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
 const BASE = process.argv[2] || new Date().toISOString().slice(0, 10).replace(/-/g, '');
 const PREFIXES = process.argv.slice(3).length ? process.argv.slice(3) : ['Z', 'T', 'K', 'Y', 'D', 'G'];
-const DAYS = 6; // 今天 + 后 5 天
+const DAYS = 3; // 今天 + 后 2 天（再多会被 12306 限流，抓不完）
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 let lastHit = 0;
