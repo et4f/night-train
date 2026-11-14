@@ -18,13 +18,14 @@ const DATA = path.resolve(import.meta.dirname, '..', 'data');
 const UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
 const DATE = process.argv[2] || new Date().toISOString().slice(0, 10).replace(/-/g, '');
-// 只抓 Z/T/K/Y —— 这正是本站收录的卧铺车底。
-// 再加 D 会让请求量翻倍，12306 会在 ~1300 次后开始返 403，得不偿失。
-const PREFIXES = process.argv.slice(3).length ? process.argv.slice(3) : ['Z', 'T', 'K', 'Y'];
+// Z/T/K/Y 是普速卧铺主力；D 字头里有一批「动卧」也是标准夜宿车，必须收。
+// V 字头是专运列车（不对外售票），N 字头（管内快速）2009 年后已并入 K，
+// 这两个前缀在 12306 上查不到任何可售车次。
+const PREFIXES = process.argv.slice(3).length ? process.argv.slice(3) : ['Z', 'T', 'K', 'Y', 'D'];
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 let lastHit = 0;
-const MIN_GAP = 380; // 单线程最小间隔，避免触发风控
+const MIN_GAP = 420; // 单线程最小间隔，避免触发风控
 
 async function getJSON(url) {
   let backoff = 1500;

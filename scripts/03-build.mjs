@@ -37,6 +37,24 @@ function absolutize(stops) {
   return out;
 }
 
+/** 这趟车有没有可能构成「傍晚发、次日早上到」的区间（用于过滤白天的动车） */
+function couldBeOvernight(stops) {
+  for (let i = 0; i < stops.length; i++) {
+    const dep = stops[i][2];
+    if (dep == null || dep % 1440 < 16 * 60) continue; // 16:00 之前发车的不看
+    for (let j = i + 1; j < stops.length; j++) {
+      const arr = stops[j][1];
+      if (arr == null) continue;
+      const dur = arr - dep;
+      if (dur < 240 || dur > 20 * 60) continue;
+      if (Math.floor(arr / 1440) <= Math.floor(dep / 1440)) continue; // 必须跨天
+      if (arr % 1440 > 12 * 60) continue; // 到站晚于 12:00
+      return true;
+    }
+  }
+  return false;
+}
+
 async function main() {
   const stations = JSON.parse(await fs.readFile(path.join(DATA, 'stations.json'), 'utf8'));
   const nameToCode = {};
@@ -45,6 +63,7 @@ async function main() {
 
   const trains = [];
   let empty = 0;
+  let dropped = 0;
   for (const f of files) {
     let s;
     try {
@@ -69,12 +88,14 @@ async function main() {
     }
     if (!ok) continue;
     const abs = absolutize(stops.map((x) => ({ station: x.code, arr: x.arr, dep: x.dep })));
-    trains.push({
-      n: s.trainNo,
-      c: s.code,
-      t: (s.code || '').replace(/[^A-Za-z]/g, '').toUpperCase() || 'K',
-      s: abs,
-    });
+    const type = (s.code || '').replace(/[^A-Za-z]/g, '').toUpperCase() || 'K';
+    // 动车组绝大多数是白天短途，只有「动卧」才是夜宿车。
+    // 把不可能在夜间运行的 D 车直接丢掉，避免数据白白膨胀。
+    if (type === 'D' && !couldBeOvernight(abs)) {
+      dropped++;
+      continue;
+    }
+    trains.push({ n: s.trainNo, c: s.code, t: type, s: abs });
   }
 
   // 车站与城市字典（只保留真正出现在时刻表里的车站）
@@ -129,7 +150,7 @@ async function main() {
   };
   await fs.writeFile(path.join(DATA, 'app.json'), JSON.stringify(out));
   console.log(
-    `列车 ${trains.length} 趟（空表 ${empty}），车站 ${out.meta.stationCount}，城市 ${out.meta.cityCount}，缺经纬度 ${geoMiss}`
+    `列车 ${trains.length} 趟（空表 ${empty}，跳过白天动车 ${dropped}），车站 ${out.meta.stationCount}，城市 ${out.meta.cityCount}，缺经纬度 ${geoMiss}`
   );
   const size = (await fs.stat(path.join(DATA, 'app.json'))).size;
   console.log('app.json', (size / 1024).toFixed(0), 'KB');
