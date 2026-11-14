@@ -18,10 +18,10 @@ const DATA = path.resolve(import.meta.dirname, '..', 'data');
 const UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
 const DATE = process.argv[2] || new Date().toISOString().slice(0, 10).replace(/-/g, '');
-// Z/T/K/Y 是普速卧铺主力；D 字头里有一批「动卧」也是标准夜宿车，必须收。
+// Z/T/K/Y 是普速卧铺主力；D 字头有「动卧」，G 字头有少量「夜间高铁」（如 G900 香港西九龙→上海虹桥），都要收。
 // V 字头是专运列车（不对外售票），N 字头（管内快速）2009 年后已并入 K，
 // 这两个前缀在 12306 上查不到任何可售车次。
-const PREFIXES = process.argv.slice(3).length ? process.argv.slice(3) : ['Z', 'T', 'K', 'Y', 'D'];
+const PREFIXES = process.argv.slice(3).length ? process.argv.slice(3) : ['Z', 'T', 'K', 'Y', 'D', 'G'];
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 let lastHit = 0;
@@ -128,6 +128,23 @@ async function main() {
     console.log(`    ${t || '(无字母)'}：+${found.size - before}，累计 ${found.size}`);
   }
   console.log('完成，共', found.size, '趟列车');
+
+  // 并入「固定收录」的车次（G 字头枚举容易被限流截断，夜间高铁数量又极少）
+  try {
+    const pinned = JSON.parse(await fs.readFile(path.join(DATA, 'pinned.json'), 'utf8'));
+    let added = 0;
+    for (const p of pinned) {
+      if (!found.has(p.trainNo)) {
+        found.set(p.trainNo, { code: p.code, trainNo: p.trainNo, from: '', to: '', stops: 0 });
+        added++;
+      }
+    }
+    if (added) console.log(`    并入固定车次 ${added} 趟`);
+    await fs.writeFile(path.join(DATA, 'index.json'), JSON.stringify([...found.values()]));
+  } catch {
+    /* 没有 pinned.json 就跳过 */
+  }
+
   // 抓到足够多就算成功（限流导致少几个前缀也不影响出站）
   if (found.size < 500) throw new Error('车次索引过少，可能被限流，放弃本次更新');
 }

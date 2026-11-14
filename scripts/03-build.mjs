@@ -89,9 +89,9 @@ async function main() {
     if (!ok) continue;
     const abs = absolutize(stops.map((x) => ({ station: x.code, arr: x.arr, dep: x.dep })));
     const type = (s.code || '').replace(/[^A-Za-z]/g, '').toUpperCase() || 'K';
-    // 动车组绝大多数是白天短途，只有「动卧」才是夜宿车。
+    // 动车组和高铁绝大多数是白天短途，只有「动卧」和夜间高铁才可能夜宿。
     // 把不可能在夜间运行的 D 车直接丢掉，避免数据白白膨胀。
-    if (type === 'D' && !couldBeOvernight(abs)) {
+    if ((type === 'D' || type === 'G') && !couldBeOvernight(abs)) {
       dropped++;
       continue;
     }

@@ -28,7 +28,8 @@ async function main() {
   const provinceCodes = [];
   const prefectures = [];
   const cities = {};
-  const MUNICIPAL = new Set(['110000', '120000', '310000', '500000']);
+  // 直辖市与特别行政区：下级不是「市」，直接用省级中心点
+  const MUNICIPAL = new Set(['110000', '120000', '310000', '500000', '810000', '820000']);
 
   for (const f of country.features) {
     const code = String(f.properties.adcode);
