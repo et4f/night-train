@@ -110,10 +110,22 @@ async function main() {
     await fs.access(path.join(DATA, 'stations.json'));
   } catch {
     console.log('[1/2] 车站字典…');
-    const r = await fetch('https://kyfw.12306.cn/otn/resources/js/framework/station_name.js', {
-      headers: { 'User-Agent': UA },
-    });
-    const js = await r.text();
+    let js = '';
+    for (let i = 0; i < 4; i++) {
+      try {
+        const r = await fetch('https://kyfw.12306.cn/otn/resources/js/framework/station_name.js', {
+          headers: { 'User-Agent': UA },
+          signal: AbortSignal.timeout(25000),
+        });
+        js = await r.text();
+        if (js.includes('station_names')) break;
+        throw new Error('返回内容不对');
+      } catch (e) {
+        console.warn('    ! 车站字典第 ' + (i + 1) + ' 次失败：' + e.message);
+        if (i === 3) throw e;
+        await sleep(3000 * (i + 1));
+      }
+    }
     const inner = js.slice(js.indexOf("'") + 1, js.lastIndexOf("'"));
     const stations = {};
     for (const item of inner.split('@')) {

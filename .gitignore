@@ -4,7 +4,6 @@ node_modules/
 # 抓取中间产物（可随时用 refresh.bat 重新生成，不进仓库）
 data/schedules/
 data/index.json
-data/stations.json
 
 # 打包产物
 dist/
@@ -29,4 +28,10 @@ data/last-refresh.log
 
 # 推广素材（本地宣发用，不进仓库）
 推广素材/
+
+
+# 调试用日志
+logs2/
+logs2.zip
+logs*.zip
 
