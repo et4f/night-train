@@ -19,6 +19,7 @@
     arr: [5 * 60, 10 * 60],
     types: new Set(),
     maxDur: 16,
+    day: 0, // 出行日期：相对数据基准日的偏移
     sort: 'score',
   };
 
@@ -99,6 +100,7 @@
     for (let ti = 0; ti < T.length; ti++) {
       const t = T[ti];
       if (!state.types.has(t.t)) continue;
+      if (Array.isArray(t.d) && !t.d.includes(state.day)) continue; // 这天不开
       const stops = t.s;
       for (let i = 0; i < stops.length; i++) {
         const ci = stops[i][0];
@@ -172,14 +174,15 @@
   function render(groups, city, fromMode) {
     const totalTrains = groups.reduce((n, g) => n + g.trains.length, 0);
     $('#sumN').textContent = groups.length;
+    const dayText = dayLabel();
     $('#sumT').textContent = fromMode
-      ? `个城市 · ${totalTrains} 趟车 · 从 ${city} 出发，睡一晚能到`
-      : `个城市 · ${totalTrains} 趟车 · 可夜宿抵达 ${city}`;
+      ? `个城市 · ${totalTrains} 趟车 · ${dayText}从 ${city} 出发，睡一晚能到`
+      : `个城市 · ${totalTrains} 趟车 · ${dayText}可夜宿抵达 ${city}`;
 
     const list = $('#list');
     if (!groups.length) {
       list.innerHTML = `<div class="empty"><span class="moon">🌙</span>
-        没有找到符合条件的夜车。<br />试试放宽<b>发车/抵达时段</b>、延长<b>最长车上时间</b>，或换一个城市。</div>`;
+        这一天没有符合条件的夜车。<br />试试换<b>出行日期</b>、放宽<b>发车/抵达时段</b>、延长<b>最长车上时间</b>，或换一个城市。</div>`;
       return;
     }
 
@@ -520,10 +523,12 @@
       state.dep = [toMin($('#depFrom').value) ?? 18 * 60, toMin($('#depTo').value) ?? 23 * 60 + 59];
       state.arr = [toMin($('#arrFrom').value) ?? 5 * 60, toMin($('#arrTo').value) ?? 10 * 60];
       state.maxDur = Number($('#maxDur').value) || 16;
+      state.day = Number($('#daySel').value);
+      if (!Number.isFinite(state.day)) state.day = 0;
       state.sort = $('#sort').value;
       search();
     };
-    ['#depFrom', '#depTo', '#arrFrom', '#arrTo', '#maxDur', '#sort'].forEach((s) =>
+    ['#depFrom', '#depTo', '#arrFrom', '#arrTo', '#maxDur', '#sort', '#daySel'].forEach((s) =>
       $(s).addEventListener('change', sync)
     );
   }
@@ -604,9 +609,54 @@
     $('#sumN').textContent = '–';
     $('#sumT').textContent = '个城市';
 
+    renderDays();
     renderTypes();
     renderChips();
     if (state.city) setCity(state.city);
+  }
+
+  /* ---------------- 出行日期 ---------------- */
+  const WD = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+  const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+
+  /** 数据里记的是「相对基准日的第几天」，这里换算成真实日期，数据放旧了也能对上 */
+  function renderDays() {
+    const sel = $('#daySel');
+    if (!sel || !D.data) return;
+    // 数据没覆盖多天（抓取被限流）时，直接隐藏日期选择器，避免误导
+    if (D.data.meta && D.data.meta.daysReliable === false) {
+      sel.closest('div').hidden = true;
+      state.day = 0;
+      return;
+    }
+    sel.closest('div').hidden = false;
+    const base = D.data.meta && D.data.meta.baseDate;
+    const today = startOfDay(new Date());
+    let diff = 0;
+    if (base && /^\d{8}$/.test(String(base))) {
+      const b = new Date(`${base.slice(0, 4)}-${base.slice(4, 6)}-${base.slice(6, 8)}T00:00:00`);
+      diff = Math.round((today - startOfDay(b)) / 86400000);
+    }
+    let html = '';
+    let firstOk = null;
+    for (let i = 0; i < 6; i++) {
+      const d = new Date(today.getTime() + i * 86400000);
+      const off = i + diff;
+      const ok = off >= 0 && off <= 5;
+      const label = i === 0 ? '今天' : i === 1 ? '明天' : i === 2 ? '后天' : `${i} 天后`;
+      const md = `${d.getMonth() + 1}/${d.getDate()} ${WD[d.getDay()]}`;
+      html += `<option value="${off}"${ok ? '' : ' disabled'}>${label} · ${md}${ok ? '' : '（无数据）'}</option>`;
+      if (ok && firstOk === null) firstOk = off;
+    }
+    sel.innerHTML = html;
+    state.day = firstOk === null ? 0 : firstOk;
+    sel.value = String(state.day);
+  }
+
+  function dayLabel() {
+    const sel = $('#daySel');
+    const o = sel && sel.selectedOptions && sel.selectedOptions[0];
+    return o ? o.textContent.replace('（无数据）', '').trim() + ' · ' : '';
   }
 
   function bindEvents() {

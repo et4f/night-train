@@ -60,6 +60,14 @@ async function main() {
   const nameToCode = {};
   for (const [code, s] of Object.entries(stations)) if (!nameToCode[s.name]) nameToCode[s.name] = code;
   const files = (await fs.readdir(SCHED)).filter((f) => f.endsWith('.json'));
+  // 每趟车在哪几天开行（0=今天 … 5=第5天）
+  const daysMap = new Map();
+  try {
+    const idx = JSON.parse(await fs.readFile(path.join(DATA, 'index.json'), 'utf8'));
+    for (const t of idx) if (Array.isArray(t.days)) daysMap.set(t.trainNo, t.days);
+  } catch {
+    /* 没有索引就当作每天都开 */
+  }
 
   const trains = [];
   let empty = 0;
@@ -95,7 +103,7 @@ async function main() {
       dropped++;
       continue;
     }
-    trains.push({ n: s.trainNo, c: s.code, t: type, s: abs });
+    trains.push({ n: s.trainNo, c: s.code, t: type, d: daysMap.get(s.trainNo) || [0, 1, 2, 3, 4, 5], s: abs });
   }
 
   // 车站与城市字典（只保留真正出现在时刻表里的车站）
@@ -136,9 +144,20 @@ async function main() {
 
   trains.sort((a, b) => a.n.localeCompare(b.n));
 
+  let baseDate = null;
+  let daysReliable = false;
+  try {
+    const b = JSON.parse(await fs.readFile(path.join(DATA, 'index-base.json'), 'utf8'));
+    baseDate = b.baseDate;
+    daysReliable = b.complete === true;
+  } catch {}
+  if (!daysReliable) daysMap.clear(); // 抓不全就当作每天都开，避免误杀车次
+
   const out = {
     meta: {
       generated: new Date().toISOString(),
+      baseDate,
+      daysReliable,
       trainCount: trains.length,
       stationCount: Object.keys(st).length,
       cityCount: Object.keys(cities).length,
