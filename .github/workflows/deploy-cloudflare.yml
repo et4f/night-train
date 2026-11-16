@@ -33,6 +33,7 @@ jobs:
             echo "未配置 CLOUDFLARE_API_TOKEN，跳过 Cloudflare 部署"
             exit 0
           fi
+          npx --yes wrangler@latest pages project create night-train --production-branch=main || true
           npx --yes wrangler@latest pages deploy docs \
             --project-name=night-train \
             --branch=main \
