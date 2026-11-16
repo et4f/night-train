@@ -138,3 +138,50 @@ night-train/
 - 不含票价、余票、卧铺席别；不含高铁动卧（D / G 字头）。
 - 天气来自 [wttr.in](https://wttr.in)，免费无 key，偶尔慢；拿不到就整条隐藏。
 - 便携版是离线快照，不联网也不自动更新，要更新只能重新打包。
+---
+
+## 国内访问：为什么慢、怎么解
+
+github.io 在中国大陆没有节点，所有请求绕境外，实测经常十几秒才打开。
+
+要真正快，只有两条路：
+
+| 方案 | 国内速度 | 备案 | 说明 |
+| --- | --- | --- | --- |
+| Cloudflare Pages | 中等 | 不用 | 走港/日/新节点，1–3 秒 |
+| 国内 OSS/COS + CDN | 最快 | **必须** | 国内节点，秒开 |
+
+> 免备案又要国内节点，没有这种线路——这是工信部规定，不是技术问题。
+> 另外 Gitee Pages 已于 2024 年下线；腾讯云 EdgeOne Pages 的默认域名在国内
+> 只给 3 小时有效的预览链接，绑国内节点同样要备案。
+
+### 上线 Cloudflare Pages（10 分钟，零成本）
+
+**方式一：拖拽上传（最快，不需要任何配置）**
+
+1. 注册 <https://dash.cloudflare.com>（邮箱即可，不用信用卡）
+2. 左侧 **Workers & Pages → Create → Pages → Upload assets**
+3. 项目名填 `night-train`，把仓库里的 `docs` 文件夹整个拖进去
+4. **Deploy**，得到 `https://night-train.pages.dev`
+
+以后数据更新了想同步：重新拖一次 `docs` 即可。
+
+**方式二：自动部署（配置一次，之后每次 push 自动同步）**
+
+1. Cloudflare 右上角头像 → **My Profile → API Tokens → Create Token**
+   → 模板选 **Cloudflare Pages: Edit** → 创建并复制令牌
+2. 控制台右侧栏能看到 **Account ID**，复制
+3. GitHub 仓库 → **Settings → Secrets and variables → Actions**，
+   新建两个 Secret：`CLOUDFLARE_API_TOKEN`、`CLOUDFLARE_ACCOUNT_ID`
+4. 之后：
+   - 每次 push 到 main，`deploy-cloudflare.yml` 会把 `docs/` 推上去
+   - 每天 06:17 的数据更新跑完，`refresh.yml` 末尾也会同步一次
+     （因为 GITHUB_TOKEN 触发的 push 不会触发其他 workflow，所以内联了一步）
+
+没配 Secret 也不会报错，工作流会打印「跳过」直接过。
+
+### 以后要更快（可选）
+
+买域名（约 50 元/年）→ 在 Cloudflare 里 CNAME 到 `night-train.pages.dev`；
+若要国内节点，需要域名完成 ICP 备案（7–20 天），再把站放到阿里云 OSS 或
+腾讯云 COS + CDN。代码不用改，`docs/` 目录直接搬。

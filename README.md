@@ -22,6 +22,9 @@
 
 **<https://et4f.github.io/night-train/>**
 
+> 国内访问 github.io 偏慢。Cloudflare Pages 镜像（部署方法见 [DEVELOPMENT.md](DEVELOPMENT.md#国内访问为什么慢怎么解)）：
+> **<https://night-train.pages.dev>**
+
 ## 开始使用
 
 **直接用（推荐）**：下载 [`夜宿火车-便携版.zip`](https://github.com/et4f/night-train/releases)，

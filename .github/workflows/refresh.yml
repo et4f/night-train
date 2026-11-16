@@ -66,3 +66,11 @@ jobs:
             git commit -m "chore: 更新 12306 时刻表 ($(date -u +%F))"
             git push
           fi
+      # 数据更新后同步到 Cloudflare（GITHUB_TOKEN 触发的 push 不会触发其他 workflow）
+      - name: 同步到 Cloudflare Pages
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then echo "未配置令牌，跳过"; exit 0; fi
+          npx --yes wrangler@latest pages deploy docs --project-name=night-train --branch=main --commit-dirty=true
