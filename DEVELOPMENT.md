@@ -166,7 +166,7 @@ github.io 在中国大陆没有节点，所有请求绕境外，实测经常十�
 
 以后数据更新了想同步：重新拖一次 `docs` 即可。
 
-**方式二：连 GitHub 仓库（本项目采用）**
+**方式二：连 GitHub 仓库（本项目实际采用）**
 
 Workers & Pages → Create → **Pages** 标签 → **Connect to Git** → 选 `et4f/night-train`：
 
@@ -181,8 +181,13 @@ Workers & Pages → Create → **Pages** 标签 → **Connect to Git** → 选 `
 一定要选 **Pages** 标签，不是 Workers——Workers 的 `npx wrangler deploy`
 会去找 Worker 脚本（仓库里恰好有 `worker/12306-proxy.js`），会部署错东西。
 
+实际结果：Cloudflare 把它建成了 **Workers 项目**（不是 Pages），
+Deploy command 是 `npx wrangler deploy`，站点跑在
+`https://night-train.etaf0305.workers.dev`。效果一样——`docs/` 被当作静态资源托管。
+
 之后每次 push 到 main（包括每天 06:17 数据更新产生的那次提交），
 Cloudflare 会自己拉代码重新发布，不需要额外的 Actions 工作流。
+如果哪天发现 Cloudflare 那边没跟着更新，去 Deployments 点 **Retry build** 即可。
 
 ### 以后要更快（可选）
 

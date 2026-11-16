@@ -3,6 +3,7 @@
 > 选一座城市，看看一晚上的火车能把你带到哪儿。
 
 [![在线体验](https://img.shields.io/badge/在线体验-et4f.github.io-2f6fed)](https://et4f.github.io/night-train/)
+[![国内镜像](https://img.shields.io/badge/国内镜像-workers.dev-f38020)](https://night-train.etaf0305.workers.dev/)
 [![License](https://img.shields.io/badge/license-MIT-3da639)](LICENSE)
 [![AI](https://img.shields.io/badge/AI-dsv4.1flash-7c3aed)](#关于-ai)
 
@@ -22,8 +23,9 @@
 
 **<https://et4f.github.io/night-train/>**
 
-> 国内访问 github.io 偏慢。Cloudflare Pages 镜像（部署方法见 [DEVELOPMENT.md](DEVELOPMENT.md#国内访问为什么慢怎么解)）：
-> **<https://night-train.pages.dev>**
+> 国内访问 github.io 偏慢，另有一个 Cloudflare 镜像（部署方法见 [DEVELOPMENT.md](DEVELOPMENT.md#国内访问为什么慢怎么解)）：
+>
+> **<https://night-train.etaf0305.workers.dev>**
 
 ## 开始使用
 
