@@ -166,19 +166,23 @@ github.io 在中国大陆没有节点，所有请求绕境外，实测经常十�
 
 以后数据更新了想同步：重新拖一次 `docs` 即可。
 
-**方式二：自动部署（配置一次，之后每次 push 自动同步）**
+**方式二：连 GitHub 仓库（本项目采用）**
 
-1. Cloudflare 右上角头像 → **My Profile → API Tokens → Create Token**
-   → 模板选 **Cloudflare Pages: Edit** → 创建并复制令牌
-2. 控制台右侧栏能看到 **Account ID**，复制
-3. GitHub 仓库 → **Settings → Secrets and variables → Actions**，
-   新建两个 Secret：`CLOUDFLARE_API_TOKEN`、`CLOUDFLARE_ACCOUNT_ID`
-4. 之后：
-   - 每次 push 到 main，`deploy-cloudflare.yml` 会把 `docs/` 推上去
-   - 每天 06:17 的数据更新跑完，`refresh.yml` 末尾也会同步一次
-     （因为 GITHUB_TOKEN 触发的 push 不会触发其他 workflow，所以内联了一步）
+Workers & Pages → Create → **Pages** 标签 → **Connect to Git** → 选 `et4f/night-train`：
 
-没配 Secret 也不会报错，工作流会打印「跳过」直接过。
+| 字段 | 填什么 |
+| --- | --- |
+| Project name | `night-train` |
+| Production branch | `main` |
+| Framework preset | **None** |
+| Build command | **留空**（`docs/` 已是成品，不用再 build） |
+| Build output directory | `docs` |
+
+一定要选 **Pages** 标签，不是 Workers——Workers 的 `npx wrangler deploy`
+会去找 Worker 脚本（仓库里恰好有 `worker/12306-proxy.js`），会部署错东西。
+
+之后每次 push 到 main（包括每天 06:17 数据更新产生的那次提交），
+Cloudflare 会自己拉代码重新发布，不需要额外的 Actions 工作流。
 
 ### 以后要更快（可选）
 
