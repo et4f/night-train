@@ -1,10 +1,11 @@
 # 每日更新时刻表
 #
-# 每天北京时间 06:17 自动抓一次 12306，重建 docs/ 并提交，Pages 会自动重新发布。
+# 每天北京时间 06:00 触发，随后在 0–30 分钟内随机等待再开抓，
+# 所以实际开始时间落在 06:00–06:30 之间（抓取本身约 4–10 分钟）。
+# 随机是为了不形成固定的请求时间点，也让每天的负载分散开。
+#
 # 也可以在 Actions 页面手动点「Run workflow」。
 #
-# 实测（2026-11-13）：GitHub 的 runner 访问 12306 正常，
-# 抓 1267 趟车的索引约 20 秒，1186 份时刻表约 3 分钟，全程 4 分钟出头。
 # 若某天 12306 抽风，会在「抓车次索引」一步失败并停下，
 # 仓库和线上站点保持上一次的数据，不会写进坏数据。
 
@@ -12,7 +13,7 @@ name: 每日更新时刻表
 
 on:
   schedule:
-    - cron: '17 22 * * *' # UTC 22:17 = 北京时间 06:17
+    - cron: '0 22 * * *' # UTC 22:00 = 北京时间 06:00，具体开始时间由下面的随机等待决定
   workflow_dispatch:
 
 permissions:
@@ -25,8 +26,14 @@ concurrency:
 jobs:
   refresh:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60 # 随机等待最多 30 分钟 + 抓取约 15 分钟
     steps:
+      - name: 随机等待（0–30 分钟）
+        run: |
+          DELAY=$((RANDOM % 1800))
+          echo "随机等待 ${DELAY} 秒（约 $((DELAY / 60)) 分 $((DELAY % 60)) 秒）"
+          sleep "$DELAY"
+
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4

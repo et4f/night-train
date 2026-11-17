@@ -26,7 +26,7 @@ night-train/
 │  ├─ 05-build-portable.mjs ← 打单文件版 + zip
 │  ├─ 06-fetch-basemap.mjs ← 下载官方标准地图底图
 │  ├─ 07-build-docs.mjs    ← 组装 docs/
-├─ .github/workflows/refresh.yml ← 每天 06:17 自动更新并发布
+├─ .github/workflows/refresh.yml ← 每天 06:00–06:30 随机开始，自动更新并发布
 └─ 夜宿火车-便携版.zip     ← 发给别人的单文件包
 ```
 
@@ -87,7 +87,7 @@ night-train/
 
 ## 每日自动更新
 
-`.github/workflows/refresh.yml` 每天北京时间 **06:17** 由 GitHub Actions 自动跑：
+`.github/workflows/refresh.yml` 每天北京时间 **06:00** 触发，先随机等 0–30 分钟再开抓（实际开始落在 06:00–06:30），由 GitHub Actions 跑：
 
 1. 探测 12306 可达性（只记录 HTTP 码，不阻断）
 2. `01-fetch-index.mjs` 抓车次索引
@@ -107,7 +107,7 @@ night-train/
   不能代表 GitHub 的出口；
 - 后来的实际运行证明 runner 完全能访问 12306，只是那次撞上了限流。
 
-现在已恢复云端定时（06:17），本机计划任务和配套脚本都删掉了；
+现在已恢复云端定时（06:00 触发 + 随机等待），本机计划任务和配套脚本都删掉了；
 需要手动更新时，本地跑 `refresh.bat` 再 `git push` 即可。
 
 ### 失败时会发生什么
@@ -185,7 +185,7 @@ Workers & Pages → Create → **Pages** 标签 → **Connect to Git** → 选 `
 Deploy command 是 `npx wrangler deploy`，站点跑在
 `https://night-train.etaf0305.workers.dev`。效果一样——`docs/` 被当作静态资源托管。
 
-之后每次 push 到 main（包括每天 06:17 数据更新产生的那次提交），
+之后每次 push 到 main（包括每天 06:00–06:30 数据更新产生的那次提交），
 Cloudflare 会自己拉代码重新发布，不需要额外的 Actions 工作流。
 如果哪天发现 Cloudflare 那边没跟着更新，去 Deployments 点 **Retry build** 即可。
 
