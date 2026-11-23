@@ -21,7 +21,14 @@ import path from 'node:path';
 const DATA = path.resolve(import.meta.dirname, '..', 'data');
 const UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
-const BASE = process.argv[2] || new Date().toISOString().slice(0, 10).replace(/-/g, '');
+// 抓取基准日默认往后推 3 天：2026-11-25 起普速车次改号（T/K → Z/N/V），
+// 25 日之前新字头在 12306 还查不到、当天时刻表也多为空表。
+// 往后取 3 天既能拿到新字头，也避开了生效当天的过渡空窗。
+const BASE = (() => {
+  if (process.argv[2]) return process.argv[2];
+  const d = new Date(Date.now() + 3 * 864e5);
+  return d.toISOString().slice(0, 10).replace(/-/g, '');
+})();
 // 2026 版《列车车次编排规定》：X/G/T/K 高速，D 动集，C 城际，S 市郊，Z/N/V 普速，Y 旅游。
 // 11 月下旬起普速车次先从 T/K 改成 Z/N/V，所以这些前缀都必须抓。
 // 顺序很重要：12306 的搜索接口有调用额度，抓完前面几个就会 403。
