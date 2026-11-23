@@ -28,7 +28,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60 # 随机等待最多 30 分钟 + 抓取约 15 分钟
     steps:
-      - name: 随机等待（0–30 分钟）
+      - name: 随机等待（仅定时任务，手动触发不等）
+        if: github.event_name == 'schedule'
         run: |
           DELAY=$((RANDOM % 1800))
           echo "随机等待 ${DELAY} 秒（约 $((DELAY / 60)) 分 $((DELAY % 60)) 秒）"
