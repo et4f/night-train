@@ -98,9 +98,10 @@ async function main() {
     if (!ok) continue;
     const abs = absolutize(stops.map((x) => ({ station: x.code, arr: x.arr, dep: x.dep })));
     const type = (s.code || '').replace(/[^A-Za-z]/g, '').toUpperCase() || 'K';
-    // 动车组和高铁绝大多数是白天短途，只有「动卧」和夜间高铁才可能夜宿。
-    // 把不可能在夜间运行的 D 车直接丢掉，避免数据白白膨胀。
-    if ((type === 'D' || type === 'G') && !couldBeOvernight(abs)) {
+    // 高速/动车/城际/市郊绝大多数是白天短途，只保留可能夜行的（动卧、夜间高铁）。
+    // 普速 Z/N/V/Y 是长途主力，全部保留。
+    const FAST = type === 'X' || type === 'G' || type === 'T' || type === 'K' || type === 'D' || type === 'C' || type === 'S';
+    if (FAST && !couldBeOvernight(abs)) {
       dropped++;
       continue;
     }

@@ -6,9 +6,14 @@
   const D = { data: null };
   const MIN_DUR = 4.5 * 60; // 少于 4.5 小时不算「睡一晚」
 
+  // 2026 版《列车车次编排规定》：
+  //   X/G/T/K 高速旅客列车 · D 动集 · C 城际 · S 市郊 · Z/N/V 普速 · Y 普速旅游
+  // 11 月下旬起普速车次先从 T/K 迁到 Z/N/V，过渡期新旧并存。
   const TYPE_NAME = {
-    Z: '直达特快', T: '特快', K: '快速', Y: '旅游', D: '动卧/动车',
-    G: '高铁', C: '城际', S: '市郊', L: '临时',
+    X: '高速', G: '高速', T: '高速', K: '高速',
+    D: '动集', C: '城际', S: '市郊',
+    Z: '普速', N: '普速', V: '普速', Y: '旅游',
+    L: '临时',
   };
   const HOT = ['北京', '上海', '广州', '成都', '西安', '乌鲁木齐', '哈尔滨', '昆明'];
 
@@ -536,7 +541,7 @@
   function renderTypes() {
     const counts = {};
     for (const t of D.data.trains) counts[t.t] = (counts[t.t] || 0) + 1;
-    const ORDER = ['Z', 'T', 'K', 'Y', 'D', 'C', 'G'];
+    const ORDER = ['X', 'G', 'T', 'K', 'D', 'C', 'S', 'Z', 'N', 'V', 'Y'];
     const idx = (t) => {
       const i = ORDER.indexOf(t);
       return i < 0 ? 99 : i;

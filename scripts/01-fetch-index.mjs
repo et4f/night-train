@@ -22,7 +22,11 @@ const DATA = path.resolve(import.meta.dirname, '..', 'data');
 const UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
 const BASE = process.argv[2] || new Date().toISOString().slice(0, 10).replace(/-/g, '');
-const PREFIXES = process.argv.slice(3).length ? process.argv.slice(3) : ['Z', 'T', 'K', 'Y', 'D', 'G'];
+// 2026 版《列车车次编排规定》：X/G/T/K 高速，D 动集，C 城际，S 市郊，Z/N/V 普速，Y 旅游。
+// 11 月下旬起普速车次先从 T/K 改成 Z/N/V，所以这些前缀都必须抓。
+const PREFIXES = process.argv.slice(3).length
+  ? process.argv.slice(3)
+  : ['X', 'G', 'T', 'K', 'D', 'C', 'S', 'Z', 'N', 'V', 'Y'];
 const DAYS = 1; // 只抓今天；未来日期的开行情况靠 daymask.json 逐日累积
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
