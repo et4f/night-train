@@ -13,7 +13,8 @@ const DATA = path.resolve(import.meta.dirname, '..', 'data');
 const SCHED = path.join(DATA, 'schedules');
 const UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
-// 与 01 保持一致：默认用 +3 天，避开 2026-11-25 车次改号的过渡空窗\nconst DATE = process.argv[2] || new Date(Date.now() + 3 * 864e5).toISOString().slice(0, 10);
+// 与 01 保持一致：默认用 +3 天，避开 2026-11-25 车次改号的过渡空窗
+const DATE = process.argv[2] || new Date(Date.now() + 3 * 864e5).toISOString().slice(0, 10);
 const TYPE_FILTER = (process.argv[3] || '').toUpperCase();
 const CONCURRENCY = Number(process.env.CONC || 4);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
