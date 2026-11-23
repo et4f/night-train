@@ -24,14 +24,17 @@ const UA =
 const BASE = process.argv[2] || new Date().toISOString().slice(0, 10).replace(/-/g, '');
 // 2026 版《列车车次编排规定》：X/G/T/K 高速，D 动集，C 城际，S 市郊，Z/N/V 普速，Y 旅游。
 // 11 月下旬起普速车次先从 T/K 改成 Z/N/V，所以这些前缀都必须抓。
+// 顺序很重要：12306 的搜索接口有调用额度，抓完前面几个就会 403。
+// 所以把最关键的普速（Z/N/V）放最前，高速（X/G/T/K）放后面。
+// C（城际）和 S（市郊）不做收录——它们没有夜行长途，收了也会在夜间判定里全部被过滤。
 const PREFIXES = process.argv.slice(3).length
   ? process.argv.slice(3)
-  : ['X', 'G', 'T', 'K', 'D', 'C', 'S', 'Z', 'N', 'V', 'Y'];
+  : ['Z', 'N', 'V', 'Y', 'D', 'T', 'K', 'G', 'X'];
 const DAYS = 1; // 只抓今天；未来日期的开行情况靠 daymask.json 逐日累积
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 let lastHit = 0;
-const MIN_GAP = 420;
+const MIN_GAP = 550;
 
 function dateStr(offset) {
   const d = new Date(
@@ -99,8 +102,14 @@ async function crawlDay(date, bucket) {
     try {
       await crawl(t);
     } catch (e) {
-      console.warn(`    ! ${date} ${t} 中断（${e.message}），已抓到 ${bucket.size} 趟`);
-      await sleep(15000);
+      // 撞上限流：冷却 60 秒再试一次，仍失败就跳过这个前缀（保住已经抓到的）
+      console.warn(`    ! ${date} ${t} 中断：${e.message}，冷却 60 秒后重试`);
+      await sleep(60000);
+      try {
+        await crawl(t);
+      } catch (e2) {
+        console.warn(`    ! ${date} ${t} 重试仍失败：${e2.message}，跳过`);
+      }
     }
   }
   return bucket;

@@ -35,3 +35,9 @@ logs2/
 logs2.zip
 logs*.zip
 
+
+# GitHub Actions 日志（调试用）
+l5/
+l5.zip
+l*.zip
+
